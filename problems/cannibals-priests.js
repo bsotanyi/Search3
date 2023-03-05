@@ -69,7 +69,7 @@ problems.push({
     customEcho (state) {
         let style = state.valid ? 'good' : 'bad';
         let append = '';
-        if (compare(state.data, this.start) || compare(state.data, this.finish)) {
+        if (state.valid && (compare(state.data, this.start) || compare(state.data, this.finish))) {
             style = 'important';
             if (state.steps > 0) {
                 append = '|' + state.steps + ' steps';

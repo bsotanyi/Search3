@@ -202,7 +202,7 @@
         }
 
         function expandTree(state, config, counter = 1) {
-            if (compare(state.data, config.problem.finish)) {
+            if (!state.valid || compare(state.data, config.problem.finish)) {
                 return;
             }
             let children = config.problem.getChildrenData(state);
@@ -272,7 +272,7 @@
             var tree = {
                 id: newId(),
                 data: config.problem.start,
-                valid: true,
+                valid: config.problem.check(config.problem.start),
                 steps: 0,
             }
             expandTree(tree, config);
