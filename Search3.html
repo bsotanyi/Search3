@@ -5,63 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search3</title>
-    <style>
-        *, *::after, *::before {
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Tahoma, sans-serif;
-        }
-        h1 {
-            margin: 0;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-        h1 mark {
-            background: inherit;
-            color: #299;
-        }
-        .grid-2 {
-            display: grid;
-            grid: auto / 1fr 1fr;
-        }
-        .form-group:not(:last-of-type) {
-            margin-bottom: 1em;
-        }
-        .form-group > * {
-            display: block;
-        }
-        select, input {
-            font-size: 1em;
-        }
-        fieldset {
-            margin: 0;
-            border: 1px solid #666;
-            border-radius: .3rem;
-        }
-        canvas {
-            background-color: #eee;
-            border: 1px solid #666;
-            margin-top: 8px;
-            display: none;
-            border-radius: .3rem;
-        }
-        #input_area fieldset {
-            gap: 2px;
-        }
-        .js-num {
-            display: grid;
-            grid: auto / 2em 1fr 2em;
-            gap: 2px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/main.min.css">
 </head>
 <body>
     <h1>Search<mark>3</mark></h1>
-    <fieldset class="grid-2">
+    <fieldset class="grid-md-2">
         <legend>Options</legend>
         <form id="input">
-            <div class="grid-2">
+            <div class="grid-sm-2" style="margin-bottom: 1rem;">
                 <div class="form-group">
                     <div>
                         <label>Problem:</label>
@@ -111,11 +62,13 @@
                     </label>
                 </div>
             </div>
-            <br>
-            <input type="submit" value="Generate" id="generate_btn">
-            <span id="generate_info"></span>
         </form>
         <div id="input_area"></div>
+        <div style="grid-column: span 2;">
+            <input type="submit" value="Generate" id="generate_btn">
+            <span id="generate_info"></span>
+            <span class="copyright">&copy; 2023 S.B.</span>
+        </div>
     </fieldset>
 
     <canvas id="canvas_output"></canvas>
@@ -139,6 +92,8 @@
             }
             return obj;
         };
+
+        let start_time = null;
 
         let input_html = '';
         for (let i in problems) {
@@ -186,28 +141,26 @@
         }
 
         // Generate start
-        qs('#input').addEventListener('submit', function (e) {
+        qs('#generate_btn').addEventListener('click', function (e) {
             e.preventDefault();
             generate_info.innerText = '';
             generate_btn.disabled = true;
-            generate_btn.value = 'Generating...';
-            let form_data = serializeForm(this);
+            generate_btn.value = 'Solving...';
+            form = document.forms.input;
+            let form_data = serializeForm(form);
             form_data.problem = problems[form_data.problem];
-            if (qs(`[data-problem-id="${this.problem.value}"]`)) {
+            if (qs(`[data-problem-id="${form.problem.value}"]`)) {
                 form_data.problem.input_vars = serializeForm(
-                    qs(`[data-problem-id="${this.problem.value}"]`)
+                    qs(`[data-problem-id="${form.problem.value}"]`)
                 );
                 for (key in form_data.problem.input_vars) {
                     form_data.problem.input_vars[key] = parseInt(form_data.problem.input_vars[key]);
                 }
             }
             setTimeout(() => {
-                let start_time = new Date();
+                start_time = new Date();
                 printGraph(form_data);
-                generate_btn.disabled = false;
-                generate_btn.value = 'Generate';
-                generate_info.innerText = 'Generated in ' + ((new Date() - start_time)/1000).toFixed(3) + ' seconds.';
-            }, 10);
+            }, 20);
         });
         let source_base = `
 #lineWidth: 1
@@ -215,7 +168,7 @@
 #arrowSize: 0.7
 #gutter: 1
 
-#.container fill=
+#background #eee
 #.good: fill=#9f9 bold
 #.bad: fill=white dashed
 #.important: fill=#99f bold
@@ -260,26 +213,77 @@
             });
 
             children = children.filter(child => !parentHasState(child.parent, child));
+            
+            if (config.mode === 'shortest') {
+                // we need to pass the data to the original tree, so we can search in it right after
+                state.children = children;
 
-            for (child of children) {
-                if (child.valid && !parentHasState(state, child)) {
+                for (child of state.children) {
+                    let best_match = getExistingItemsByData(child.data, tree, child.id)
+                        .sort((a,b) => a.steps - b.steps)[0] || null;
+                    if (best_match && best_match.steps <= child.steps) {
+                        // the tree already contains this position, with a smaller step count, so we can discard this
+                        child.valid = false;
+                    }
+                }
+
+                state.children = state.children.filter(child => child.valid);
+            }
+
+            for (child of (config.mode === 'all' ? children : state.children)) {
+                if (child.valid) {
                     expandTree(child, config, counter + 1)
                 }
             }
 
-            state.children = children;
+            if (config.mode === 'all') {
+                state.children = children;
+            }
+        }
+
+        function treeContains(state, tree) {
+            return compare(state.data, tree.data) ||
+                (tree.children || []).some(child => treeContains(state, child));
+        }
+
+        function getExistingItemsByData(data, tree, exclude_id = null) {
+            let results = [];
+            if (compare(data, tree.data) && tree.id !== exclude_id) {
+                results.push(tree);
+            }
+            for (child of tree.children || []) {
+                child_results = getExistingItemsByData(data, child, exclude_id);
+                if (child_results.length) {
+                    results.push(...child_results);
+                }
+            }
+            return results;
+        }
+
+        function getBestChild(tree, config) {
+            return getExistingItemsByData(config.problem.finish, tree)
+                .sort((a,b) => a.steps - b.steps)[0] || null;
+        }
+
+        function cleanUpTree(ending) {
+            if (ending.parent) {
+                if (ending.parent.children.length > 1) {
+                    ending.parent.children = ending.parent.children.filter(child => child.id === ending.id);
+                }
+                cleanUpTree(ending.parent);
+            }
         }
         
         function parentHasState(prev, state) {
-            return (compare(prev.data, state.data)) || (
+            return compare(prev.data, state.data) || (
                 prev.parent && parentHasState(prev.parent, state)
             );
         }
 
         /* Generate string output based on data */
-        function echo(state, config) {
-            if (config.format === 'pretty' && config.problem.customEcho) {
-                return config.problem.customEcho(state);
+        function render(state, config) {
+            if (config.format === 'pretty' && config.problem.customRender) {
+                return config.problem.customRender(state);
             }
             let style = state.valid ? 'good' : 'bad';
             let append = '';
@@ -298,9 +302,9 @@
         function printTree(tree, config, prev = null) {
             rows = [];
             if (prev) {
-                rows.push(echo(prev, config) + '->' + echo(tree, config));
+                rows.push(render(prev, config) + '->' + render(tree, config));
             } else {
-                rows.push(echo(tree, config));
+                rows.push(render(tree, config));
             }
             for (item of tree.children || []) {
                 rows = rows.concat(printTree(item, config, tree));
@@ -308,8 +312,12 @@
             return rows.join('\n');
         }
 
+        let tree = {
+            steps: 0,
+        }
+
         function printGraph(config) {
-            var tree = {
+            tree = {
                 id: newId(),
                 data: config.problem.start,
                 valid: config.problem.check(config.problem.start),
@@ -317,36 +325,58 @@
             }
             try {
                 expandTree(tree, config);
+
+                if (config.mode === 'shortest') {
+                    let best_child = getBestChild(tree, config);
+                    if (!best_child) {
+                        alert('Could not find any solve paths.');
+                    } else {
+                        cleanUpTree(best_child);
+                    }
+                }
             } catch (err) {
                 alert('An error occured while expanding data tree: ' + err.toString());
                 return;
             }
-
-            try {
-                let graph = printTree(tree, config);
-        
-                // let source = source_base + `[<container>${config.problem.title}|\n${graph}\n]`;
-                
-                let plus_options = `
-#direction: ${qs('[name="direction"]:checked').value}
-                `;
-                let source = plus_options + source_base + graph;
-        
-                
-                if (qs('[name="output"]:checked').value === 'png') {
-                    qs('#canvas_output').style.display = 'block';
-                    nomnoml.draw(qs('#canvas_output'), source);
-                    qs('#svg_output').innerHTML = '';
-                } else {
-                    qs('#canvas_output').style.display = 'none';
-                    svg = nomnoml.renderSvg(source);
-                    qs('#svg_output').innerHTML = svg;
+            
+            generate_btn.value = 'Rendering...';
+            generate_info.innerText = 'Data tree expanded in ' + ((new Date() - start_time)/1000).toFixed(3) + ' seconds.';
+            
+            setTimeout(() => {
+                start_time = new Date();
+                try {
+                    let graph = printTree(tree, config);
+            
+                    // let source = source_base + `[<container>${config.problem.title}|\n${graph}\n]`;
+                    
+                    let extra_options = `
+    #direction: ${config.direction}
+                    `;
+                    let source = extra_options + source_base + graph;
+            
+                    
+                    if (config.output === 'png') {
+                        qs('#canvas_output').style.display = 'block';
+                        nomnoml.draw(qs('#canvas_output'), source);
+                        qs('#svg_output').innerHTML = '';
+                        qs('#svg_output').style.display = 'none';
+                    } else {
+                        qs('#canvas_output').style.display = 'none';
+                        svg = nomnoml.renderSvg(source);
+                        qs('#svg_output').innerHTML = svg;
+                        qs('#svg_output').style.display = 'inline-block';
+                    }
+    
+                } catch (err) {
+                    alert('An error occured: graph is too big to render.\nTry generating the shortest path only.');
+                    throw err;
+                    return;
                 }
+                generate_info.innerText += ' Rendered in ' + ((new Date() - start_time)/1000).toFixed(3) + ' seconds.';
+                generate_btn.value = 'Generate';
+                generate_btn.disabled = false;
+            }, 20);
 
-            } catch (err) {
-                alert('An error occured: graph is too big to render.');
-                return;
-            }
         }
     </script>
 </body>

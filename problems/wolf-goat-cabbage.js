@@ -36,7 +36,7 @@ problems.push({
     
         return children;
     },
-    customEcho (state) {
+    customRender(state) {
         let style = state.valid ? 'good' : 'bad';
         let append = '';
         if (compare(state.data, this.start) || compare(state.data, this.finish)) {
@@ -52,9 +52,8 @@ problems.push({
         rightside = (state.data.wolf ? '🐺' : '')
             + (state.data.goat ? '🐐' : '')
             + (state.data.cabb ? '🥬' : '');
-        return '['+modifier+Object.values(state.data).toString() + '|'
+        return '[' + modifier + Object.values(state.data).toString() + '|'
             + (leftside || '-') + '|' + (rightside || '-') + '||'
-    
             + (state.data.boat ? '-|🚣' : '🚣|-')
             + append + ']';
     }

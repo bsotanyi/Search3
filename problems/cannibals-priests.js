@@ -66,7 +66,7 @@ problems.push({
     
         return children;
     },
-    customEcho (state) {
+    customRender(state) {
         let style = state.valid ? 'good' : 'bad';
         let append = '';
         if (state.valid && (compare(state.data, this.start) || compare(state.data, this.finish))) {
