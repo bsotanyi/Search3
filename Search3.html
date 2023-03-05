@@ -21,6 +21,10 @@
             background: inherit;
             color: #299;
         }
+        .grid-2 {
+            display: grid;
+            grid: auto / 1fr 1fr;
+        }
         .form-group:not(:last-of-type) {
             margin-bottom: 1em;
         }
@@ -32,8 +36,6 @@
         }
         fieldset {
             margin: 0;
-            display: grid;
-            grid: auto / 1fr 1fr;
             border: 1px solid #666;
             border-radius: .3rem;
         }
@@ -47,38 +49,67 @@
         #input_area fieldset {
             gap: 2px;
         }
+        .js-num {
+            display: grid;
+            grid: auto / 2em 1fr 2em;
+            gap: 2px;
+        }
     </style>
 </head>
 <body>
     <h1>Search<mark>3</mark></h1>
-    <fieldset>
+    <fieldset class="grid-2">
         <legend>Options</legend>
         <form id="input">
-            <div class="form-group">
-                <div>
-                    <label>Problem:</label>
-                    <select name="problem" id="problem"></select>
+            <div class="grid-2">
+                <div class="form-group">
+                    <div>
+                        <label>Problem:</label>
+                        <select name="problem" id="problem"></select>
+                    </div>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Graph format:</label>
-                <label>
-                    <input type="radio" name="format" value="compact"></input>
-                    compact (small, faster)
-                </label>
-                <label><input type="radio" name="format" value="pretty" checked></input>
-                    pretty (large, slower)
-                </label>
-            </div>
-            <div class="form-group">
-                <label>I want to see:</label>
-                <label>
-                    <input type="radio" name="mode" value="all" checked></input>
-                    all possible paths
-                </label>
-                <label><input type="radio" name="mode" value="shortest"></input>
-                    only the shortest possible path
-                </label>
+                <div class="form-group">
+                    <label>Graph format:</label>
+                    <label>
+                        <input type="radio" name="format" value="compact"></input>
+                        compact (small, faster)
+                    </label>
+                    <label><input type="radio" name="format" value="pretty" checked></input>
+                        pretty (large, slower)
+                    </label>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Graph direction:</label>
+                        <label>
+                            <input type="radio" name="direction" value="down" checked></input>
+                            down ↓
+                        </label>
+                        <label><input type="radio" name="direction" value="right"></input>
+                            right →
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Output type:</label>
+                        <label>
+                            <input type="radio" name="output" value="png" checked></input>
+                            canvas (PNG)
+                        </label>
+                        <label><input type="radio" name="output" value="svg"></input>
+                            SVG
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>I want to see:</label>
+                    <label>
+                        <input type="radio" name="mode" value="all" checked></input>
+                        all possible paths
+                    </label>
+                    <label><input type="radio" name="mode" value="shortest"></input>
+                        only the shortest possible path
+                    </label>
+                </div>
             </div>
             <br>
             <input type="submit" value="Generate" id="generate_btn">
@@ -86,7 +117,9 @@
         </form>
         <div id="input_area"></div>
     </fieldset>
-    <canvas id="main_canvas"></canvas>
+
+    <canvas id="canvas_output"></canvas>
+    <div id="svg_output"></div>
     <script src="graphre.js"></script>
     <script src="nomnoml.js"></script>
     <script>
@@ -94,6 +127,7 @@
     </script>
     <script src="problems/wolf-goat-cabbage.js"></script>
     <script src="problems/cannibals-priests.js"></script>
+    <script src="problems/jumping-frogs.js"></script>
     <script>
         function qs(selector, parent_el = document) { return parent_el.querySelector(selector); }
         function qsa(selector, parent_el = document) { return [...parent_el.querySelectorAll(selector)]; }
@@ -116,18 +150,26 @@
                 for (key in problems[i].input_vars) {
                     inputs += `
                         <label>${key}</label>
-                        <input name="${key}" type="number" value="${problems[i].input_vars[key]}">
+                        <div class="js-num">
+                            <button type="button" class="js-minus">-</button>
+                            <input name="${key}" type="number" value="${problems[i].input_vars[key]}">
+                            <button type="button" class="js-plus">+</button>
+                        </div>
                     `;
                 }
                 input_html += `<form style="display:none" data-input-vars data-problem-id="${i}">
-                    <fieldset>
+                    <fieldset class="grid-2">
                         <legend>Input variables</legend>
                         ${inputs}
-                    </fieldset
+                    </fieldset>
                 </form>`;
             }
         }
         qs('#input_area').innerHTML = input_html;
+        for (let num of qsa('.js-num')) {
+            qs('.js-plus', num).onclick = () => qs('input', num).value = ~~qs('input', num).value + 1;
+            qs('.js-minus', num).onclick = () => qs('input', num).value = ~~qs('input', num).value - 1;
+        }
         
         qs('#problem').addEventListener('input', function() {
             refreshInputArea(this.value);
@@ -168,8 +210,6 @@
             }, 10);
         });
         let source_base = `
-
-#direction: down
 #lineWidth: 1
 #spacing: 25
 #arrowSize: 0.7
@@ -275,14 +315,38 @@
                 valid: config.problem.check(config.problem.start),
                 steps: 0,
             }
-            expandTree(tree, config);
-    
-            let graph = printTree(tree, config);
-            // let source = source_base + `[<container>${config.problem.title}|\n${graph}\n]`;
-            let source = source_base + graph;
-    
-            qs('#main_canvas').style.display = 'block';
-            nomnoml.draw(qs('#main_canvas'), source);
+            try {
+                expandTree(tree, config);
+            } catch (err) {
+                alert('An error occured while expanding data tree: ' + err.toString());
+                return;
+            }
+
+            try {
+                let graph = printTree(tree, config);
+        
+                // let source = source_base + `[<container>${config.problem.title}|\n${graph}\n]`;
+                
+                let plus_options = `
+#direction: ${qs('[name="direction"]:checked').value}
+                `;
+                let source = plus_options + source_base + graph;
+        
+                
+                if (qs('[name="output"]:checked').value === 'png') {
+                    qs('#canvas_output').style.display = 'block';
+                    nomnoml.draw(qs('#canvas_output'), source);
+                    qs('#svg_output').innerHTML = '';
+                } else {
+                    qs('#canvas_output').style.display = 'none';
+                    svg = nomnoml.renderSvg(source);
+                    qs('#svg_output').innerHTML = svg;
+                }
+
+            } catch (err) {
+                alert('An error occured: graph is too big to render.');
+                return;
+            }
         }
     </script>
 </body>
