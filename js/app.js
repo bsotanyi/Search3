@@ -1,8 +1,44 @@
 import Alpine from 'alpinejs'
 import { problems } from './problems';
 import * as helpers from './helpers';
+import AlpineInstance from 'alpinejs';
 
 window.Alpine = Alpine
+
+document.addEventListener('alpine:init', () => {
+    Alpine.store('app', {
+        format: 'pretty',
+        direction: 'down',
+        output: 'png',
+        mode: 'all',
+
+        button_text: 'Generate',
+        log: '',
+        svg_output: '',
+    });
+
+    Alpine.data('application', () => ({
+        generate() {
+            Alpine.store('app').button_text = 'Solving...';
+            Alpine.store('app').log = '';
+            form = document.forms.input;
+            let form_data = helpers.serializeForm(form);
+            form_data.problem = problems[form_data.problem];
+            if (helpers.qs(`[data-problem-id="${form.problem.value}"]`)) {
+                form_data.problem.input_vars = helpers.serializeForm(
+                    helpers.qs(`[data-problem-id="${form.problem.value}"]`)
+                );
+                for (key in form_data.problem.input_vars) {
+                    form_data.problem.input_vars[key] = parseInt(form_data.problem.input_vars[key]);
+                }
+            }
+            setTimeout(() => {
+                start_time = new Date();
+                printGraph(form_data);
+            }, 20);
+        }
+    }));
+});
 
 let start_time = null;
 
@@ -52,28 +88,6 @@ function refreshInputArea(problem_id) {
     }
 }
 
-// Generate start
-helpers.qs('#generate_btn').addEventListener('click', function (e) {
-    e.preventDefault();
-    generate_info.innerText = '';
-    generate_btn.disabled = true;
-    generate_btn.value = 'Solving...';
-    form = document.forms.input;
-    let form_data = helpers.serializeForm(form);
-    form_data.problem = problems[form_data.problem];
-    if (helpers.qs(`[data-problem-id="${form.problem.value}"]`)) {
-        form_data.problem.input_vars = helpers.serializeForm(
-            helpers.qs(`[data-problem-id="${form.problem.value}"]`)
-        );
-        for (key in form_data.problem.input_vars) {
-            form_data.problem.input_vars[key] = parseInt(form_data.problem.input_vars[key]);
-        }
-    }
-    setTimeout(() => {
-        start_time = new Date();
-        printGraph(form_data);
-    }, 20);
-});
 let source_base = `
 #lineWidth: 1
 #spacing: 25
@@ -235,8 +249,9 @@ function printGraph(config) {
         return;
     }
     
-    generate_btn.value = 'Rendering...';
-    generate_info.innerText = 'Data tree expanded in ' + ((new Date() - start_time)/1000).toFixed(3) + ' seconds.';
+
+    Alpine.store('app').button_text = 'Rendering...';
+    Alpine.store('app').log = 'Data tree expanded in ' + ((new Date() - start_time)/1000).toFixed(3) + ' seconds.';
     
     setTimeout(() => {
         start_time = new Date();
@@ -252,15 +267,9 @@ function printGraph(config) {
     
             
             if (config.output === 'png') {
-                helpers.qs('#canvas_output').style.display = 'block';
                 nomnoml.draw(helpers.qs('#canvas_output'), source);
-                helpers.qs('#svg_output').innerHTML = '';
-                helpers.qs('#svg_output').style.display = 'none';
-            } else {
-                helpers.qs('#canvas_output').style.display = 'none';
-                svg = nomnoml.renderSvg(source);
-                helpers.qs('#svg_output').innerHTML = svg;
-                helpers.qs('#svg_output').style.display = 'inline-block';
+            } else {;
+                Alpine.store('app').svg_output = nomnoml.renderSvg(source);
             }
 
         } catch (err) {
@@ -268,9 +277,8 @@ function printGraph(config) {
             throw err;
             return;
         }
-        generate_info.innerText += ' Rendered in ' + ((new Date() - start_time)/1000).toFixed(3) + ' seconds.';
-        generate_btn.value = 'Generate';
-        generate_btn.disabled = false;
+        Alpine.store('app').log += ' Rendered in ' + ((new Date() - start_time)/1000).toFixed(3) + ' seconds.';
+        Alpine.store('app').button_text = 'Generate';
     }, 20);
 
 }

@@ -6,7 +6,7 @@
     <title>Search3</title>
     <link rel="stylesheet" href="css/main.min.css">
 </head>
-<body>
+<body x-data="application">
     <h1>Search<mark>3</mark></h1>
     <fieldset class="grid-md-2">
         <legend>Options</legend>
@@ -21,10 +21,10 @@
                 <div class="form-group">
                     <label>Graph format:</label>
                     <label>
-                        <input type="radio" name="format" value="compact"></input>
+                        <input type="radio" name="format" value="compact" x-model="$store.app.format"></input>
                         compact (small, faster)
                     </label>
-                    <label><input type="radio" name="format" value="pretty" checked></input>
+                    <label><input type="radio" name="format" value="pretty" x-model="$store.app.format"></input>
                         pretty (large, slower)
                     </label>
                 </div>
@@ -32,20 +32,20 @@
                     <div class="form-group">
                         <label>Graph direction:</label>
                         <label>
-                            <input type="radio" name="direction" value="down" checked></input>
+                            <input type="radio" name="direction" value="down" x-model="$store.app.direction"></input>
                             down ↓
                         </label>
-                        <label><input type="radio" name="direction" value="right"></input>
+                        <label><input type="radio" name="direction" value="right" x-model="$store.app.direction"></input>
                             right →
                         </label>
                     </div>
                     <div class="form-group">
                         <label>Output type:</label>
                         <label>
-                            <input type="radio" name="output" value="png" checked></input>
+                            <input type="radio" name="output" value="png"  x-model="$store.app.output"></input>
                             canvas (PNG)
                         </label>
-                        <label><input type="radio" name="output" value="svg"></input>
+                        <label><input type="radio" name="output" value="svg" x-model="$store.app.output"></input>
                             SVG
                         </label>
                     </div>
@@ -53,10 +53,10 @@
                 <div class="form-group">
                     <label>I want to see:</label>
                     <label>
-                        <input type="radio" name="mode" value="all" checked></input>
+                        <input type="radio" name="mode" value="all"  x-model="$store.app.mode"></input>
                         all possible paths
                     </label>
-                    <label><input type="radio" name="mode" value="shortest"></input>
+                    <label><input type="radio" name="mode" value="shortest" x-model="$store.app.mode"></input>
                         only the shortest possible path
                     </label>
                 </div>
@@ -64,14 +64,15 @@
         </form>
         <div id="input_area"></div>
         <div style="grid-column: span 2;">
-            <input type="submit" value="Generate" id="generate_btn">
-            <span id="generate_info"></span>
+            <button type="button" id="generate_btn" @click="generate" x-text="$store.app.button_text" :disabled="$store.app.button_text !== 'Generate'"></button>
+            <span id="generate_info" x-text="$store.app.log"></span>
             <span class="copyright">&copy; 2023 S.B.</span>
         </div>
     </fieldset>
 
-    <canvas id="canvas_output"></canvas>
-    <div id="svg_output"></div>
+    <canvas id="canvas_output" x-show="$store.app.output == 'png'"></canvas>
+    <div id="svg_output" x-show="$store.app.output == 'svg'" x-html="$store.app.svg_output"></div>
+
     <script src="js/lib/graphre.js"></script>
     <script src="js/lib/nomnoml.js"></script>
     <script src="app.bundle.js"></script>
