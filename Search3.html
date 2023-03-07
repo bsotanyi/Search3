@@ -73,24 +73,26 @@
             </div>
         </form>
         <div id="input_area">
-            <fieldset x-show="app.problem.input_vars" x-transition>
-                <legend>Input variables</legend>
-                <template x-for="(value, key) in app.problem.input_vars || []">
-                    <div class="input-container">
-                        <label x-text="key"></label>
-                        <template x-if="typeof value === 'number'">
-                            <div class="num">
-                                <button type="button" @click="app.problem.input_vars[key]--">-</button>
-                                <input type="number" x-model="value">
-                                <button type="button" @click="app.problem.input_vars[key]++">+</button>
-                            </div>
-                        </template>
-                        <template x-if="typeof value === 'string'">
-                            <textarea rows="3" x-model="app.problem.input_vars[key]" spellcheck="false" autocapitalize="off"></textarea>
-                        </template>
-                    </div>
-                </template>
-            </fieldset>
+            <template x-if="app.problem.input_vars">
+                <fieldset>
+                    <legend>Input variables</legend>
+                    <template x-for="(value, key) in app.problem.input_vars || []">
+                        <div class="input-container">
+                            <label x-text="key"></label>
+                            <template x-if="typeof value === 'number'">
+                                <div class="num">
+                                    <button type="button" @click="app.problem.input_vars[key]--">-</button>
+                                    <input type="number" x-model="value">
+                                    <button type="button" @click="app.problem.input_vars[key]++">+</button>
+                                </div>
+                            </template>
+                            <template x-if="typeof value === 'string'">
+                                <textarea rows="3" x-text="value" @input="$nextTick(() => app.problem.input_vars[key] = $el.value)" spellcheck="false" autocapitalize="off"></textarea>
+                            </template>
+                        </div>
+                    </template>
+                </fieldset>
+            </template>
         </div>
         <div style="grid-column: span 2;">
             <button type="button" id="generate_btn" @click="generate" x-text="app.button_text" :disabled="app.button_text !== 'Generate'"></button>
