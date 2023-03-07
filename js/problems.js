@@ -1,5 +1,3 @@
-import * as helpers from './helpers.js';
-
 export let problems = [
     {
         title: 'Wolf, goat, cabbage',
@@ -24,14 +22,14 @@ export let problems = [
             }
             return true;
         },
-        getChildrenData(state) {
+        getChildrenData(data) {
             let children = [];
     
-            children.push({...state.data, boat: state.data.boat ? 0 : 1});
+            children.push({...data, boat: data.boat ? 0 : 1});
         
             for (let passenger of ['wolf', 'goat', 'cabb']) {
-                if (state.data.boat === state.data[passenger]) {
-                    let child = {...state.data, boat: state.data.boat ? 0 : 1};
+                if (data.boat === data[passenger]) {
+                    let child = {...data, boat: data.boat ? 0 : 1};
                     child[passenger] = child.boat;
                     children.push(child);
                 }
@@ -42,10 +40,10 @@ export let problems = [
         customRender(state) {
             let style = state.valid ? 'good' : 'bad';
             let append = '';
-            if (helpers.compare(state.data, this.start) || helpers.compare(state.data, this.finish)) {
+            if (compare(state.data, this.start) || compare(state.data, this.finish)) {
                 style = 'important';
                 if (state.steps > 0) {
-                    append = '|' + state.steps + ' steps';
+                    append = '-[<abstract id=' + state.id + 's>' + state.steps + ' steps' + ']';
                 }
             }
             modifier = `<${style}table id=${state.id}>`;
@@ -58,7 +56,7 @@ export let problems = [
             return '[' + modifier + Object.values(state.data).toString() + '|'
                 + (leftside || '-') + '|' + (rightside || '-') + '||'
                 + (state.data.boat ? '-|🚣' : '🚣|-')
-                + append + ']';
+                + ']' + append;
         }
     },
     {
@@ -95,12 +93,12 @@ export let problems = [
             }
             return true;
         },
-        getChildrenData(state) {
+        getChildrenData(data) {
             let children = [];
         
-            let [c, p] = state.data.boat
-                ? [state.data.cannibals_right, state.data.priests_right]
-                : [state.data.cannibals_left, state.data.priests_left];
+            let [c, p] = data.boat
+                ? [data.cannibals_right, data.priests_right]
+                : [data.cannibals_left, data.priests_left];
         
             let combinations = [];
             for (let i = 0; i <= c; i++) {
@@ -112,8 +110,8 @@ export let problems = [
             }
             
             for (item of combinations) {
-                let child = {...state.data, boat: state.data.boat ? 0 : 1};
-                if (state.data.boat) {
+                let child = {...data, boat: data.boat ? 0 : 1};
+                if (data.boat) {
                     child.cannibals_left += item[0];
                     child.priests_left += item[1];
                     child.cannibals_right -= item[0];
@@ -132,10 +130,10 @@ export let problems = [
         customRender(state) {
             let style = state.valid ? 'good' : 'bad';
             let append = '';
-            if (state.valid && (helpers.compare(state.data, this.start) || helpers.compare(state.data, this.finish))) {
+            if (state.valid && (compare(state.data, this.start) || compare(state.data, this.finish))) {
                 style = 'important';
                 if (state.steps > 0) {
-                    append = '|' + state.steps + ' steps';
+                    append = '-[<abstract id=' + state.id + 's>' + state.steps + ' steps' + ']';
                 }
             }
             modifier = `<${style}table id=${state.id}>`;
@@ -143,7 +141,7 @@ export let problems = [
                 + ('👺'.repeat(state.data.cannibals_left) || '-') + '|' + ('👺'.repeat(state.data.cannibals_right) || '-') + '||'
                 + ('👴'.repeat(state.data.priests_left) || '-') + '|' + ('👴'.repeat(state.data.priests_right) || '-') + '||'
                 + (state.data.boat ? '-|⛵' : '⛵|-')
-                + append + ']';
+                + ']' + append;
         }
     },
     {
@@ -171,17 +169,17 @@ export let problems = [
         check(data) {
             return true;
         },
-        getChildrenData(state) {
+        getChildrenData(data) {
             let children = [];
         
-            for (let index = 0; index < state.data.length; index++) {
-                if (!state.data[index]) continue;
+            for (let index = 0; index < data.length; index++) {
+                if (!data[index]) continue;
     
                 for (let jump_length = 1; jump_length <= this.input_vars.max_jump_length; jump_length++) {
-                    let dest = index + jump_length * state.data[index];
+                    let dest = index + jump_length * data[index];
     
-                    if (state.data[dest] !== undefined && !state.data[dest]) {
-                        let child = [...state.data];
+                    if (data[dest] !== undefined && !data[dest]) {
+                        let child = [...data];
                         child[dest] = child[index];
                         child[index] = 0;
                         children.push(child)
@@ -194,10 +192,10 @@ export let problems = [
         customRender(state) {
             let style = state.valid ? 'good' : 'bad';
             let append = '';
-            if (state.valid && (helpers.compare(state.data, this.start) || helpers.compare(state.data, this.finish))) {
+            if (state.valid && (compare(state.data, this.start) || compare(state.data, this.finish))) {
                 style = 'important';
                 if (state.steps > 0) {
-                    append = '|' + state.steps + ' steps';
+                    append = '-[<abstract id=' + state.id + 's>' + state.steps + ' steps' + ']';
                 }
             }
             modifier = `<${style}table id=${state.id}>`;
@@ -207,7 +205,96 @@ export let problems = [
                     0: '🞎',
                     '-1': '◄'
                 })[frog]
-            )).join('') + append + ']';
+            )).join('') + ']' + append;
         }
     },
+    {
+        title: 'Pathfinding dog',
+        input_vars: {
+            map: `D--
+-XB
+---`
+        },
+        vars: {},
+        init() {
+            let error = '';
+            if (this.input_vars.map.indexOf('D') === -1) {
+                error = 'Error: Map is missing the dog (D)';
+            } else if (this.input_vars.map.indexOf('D') !== this.input_vars.map.lastIndexOf('D')) {
+                error = 'Error: Map contains more than one dog (D)';
+            }
+            if (this.input_vars.map.indexOf('B') === -1) {
+                error = 'Error: Map is missing the bone (B)';
+            } else if (this.input_vars.map.indexOf('B') !== this.input_vars.map.lastIndexOf('B')) {
+                error = 'Error: Map contains more than one bone (B)';
+            }
+            if (error !== '') {
+                alert(error);
+                return false;
+            }
+            this.vars.table = this.input_vars.map.trim().split("\n").map(row => row.split(''));
+            for (let y in this.vars.table) {
+                for (let x in this.vars.table[y]) {
+                    if (this.vars.table[y][x] === 'D')
+                        this.vars.start_position = {x: ~~x, y: ~~y};
+                    if (this.vars.table[y][x] === 'B')
+                        this.vars.finish_position = {x: ~~x, y: ~~y};
+
+                }
+            }
+            return true;
+        },
+        get start() {
+            return this.vars.start_position;
+        },
+        get finish() {
+            return this.vars.finish_position;
+        },
+        check(data) {
+            return true;
+        },
+        getChildrenData(data) {
+            let children = [];
+
+            for (let move of [
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],
+            ]) {
+                let dest_x = data.x + move[0];
+                let dest_y = data.y + move[1];
+                if (
+                    this.vars.table[dest_y] &&
+                    this.vars.table[dest_y][dest_x] &&
+                    this.vars.table[dest_y][dest_x] !== 'X'
+                ) {
+                    children.push({x: dest_x, y: dest_y});
+                }
+            }
+        
+            return children;
+        },
+        customRender(state) {
+            let style = state.valid ? 'good' : 'bad';
+            let append = '';
+            if (state.valid && (compare(state.data, this.start) || compare(state.data, this.finish))) {
+                style = 'important';
+                if (state.steps > 0) {
+                    append = '-[<abstract id=' + state.id + 's>' + state.steps + ' steps' + ']';
+                }
+            }
+            modifier = `<${style}table id=${state.id}>`;
+            return '[' + modifier + Object.values(state.data).toString() + '|' + this.vars.table.map(
+                (row, y) => row.map(
+                    (item, x) => {
+                        if (compare({x, y}, state.data)) return '🐶';
+                        if (compare({x, y}, this.vars.finish_position)) return '🦴';
+                        if (item === 'X') return '🧱';
+                        return '⠀';
+                    }
+                ).join('|')
+            ).join('||') + ']' + append;
+        }
+    }
 ];

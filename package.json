@@ -4,14 +4,16 @@
   "description": "",
   "main": "js/app.js",
   "watch": {
-    "build": "js/*.js"
+    "build": ["js/*.js", "js/*.mjs"]
   },
   "scripts": {
     "watch": "npm-watch",
-    "build": "esbuild js/app.js --bundle --minify --format=iife --outfile=app.bundle.js"
+    "build": "esbuild js/app.js --bundle --loader:.mjs=text --minify --format=iife --outfile=app.bundle.js"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "^6.1.4",
     "alpinejs": "^3.11.1",
+    "codemirror": "^6.0.1",
     "esbuild": "^0.17.11",
     "npm-watch": "^0.11.0"
   }

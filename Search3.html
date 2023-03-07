@@ -8,23 +8,33 @@
 </head>
 <body x-data="application">
     <h1>Search<mark>3</mark></h1>
-    <fieldset class="grid-md-2">
+    <fieldset style="margin-bottom: 1rem;" x-show="app.problem.custom" x-transition>
+        <legend>User-defined problem</legend>
+        <div id="editor" class="language-javascript"></div>
+        <button type="button" @click="loadExample()">Load example</button>
+        <button type="button" @click="saveCode()">Save code</button>
+    </fieldset>
+    <fieldset class="grid-md-21">
         <legend>Options</legend>
         <form id="input">
             <div class="grid-sm-2" style="margin-bottom: 1rem;">
                 <div class="form-group">
                     <div>
                         <label>Problem:</label>
-                        <select name="problem" id="problem"></select>
+                        <select name="problem" id="problem" x-model="app.problem_id">
+                            <template x-for="(problem, index) in app.problems" :key="index">
+                                <option :value="index" x-text="problem.title"></option>
+                            </template>
+                        </select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Graph format:</label>
                     <label>
-                        <input type="radio" name="format" value="compact" x-model="$store.app.format"></input>
+                        <input type="radio" name="format" value="compact" x-model="app.format"></input>
                         compact (small, faster)
                     </label>
-                    <label><input type="radio" name="format" value="pretty" x-model="$store.app.format"></input>
+                    <label><input type="radio" name="format" value="pretty" x-model="app.format"></input>
                         pretty (large, slower)
                     </label>
                 </div>
@@ -32,20 +42,20 @@
                     <div class="form-group">
                         <label>Graph direction:</label>
                         <label>
-                            <input type="radio" name="direction" value="down" x-model="$store.app.direction"></input>
+                            <input type="radio" name="direction" value="down" x-model="app.direction"></input>
                             down ↓
                         </label>
-                        <label><input type="radio" name="direction" value="right" x-model="$store.app.direction"></input>
+                        <label><input type="radio" name="direction" value="right" x-model="app.direction"></input>
                             right →
                         </label>
                     </div>
                     <div class="form-group">
                         <label>Output type:</label>
                         <label>
-                            <input type="radio" name="output" value="png"  x-model="$store.app.output"></input>
+                            <input type="radio" name="output" value="png"  x-model="app.output"></input>
                             canvas (PNG)
                         </label>
-                        <label><input type="radio" name="output" value="svg" x-model="$store.app.output"></input>
+                        <label><input type="radio" name="output" value="svg" x-model="app.output"></input>
                             SVG
                         </label>
                     </div>
@@ -53,28 +63,48 @@
                 <div class="form-group">
                     <label>I want to see:</label>
                     <label>
-                        <input type="radio" name="mode" value="all"  x-model="$store.app.mode"></input>
+                        <input type="radio" name="mode" value="all"  x-model="app.mode"></input>
                         all possible paths
                     </label>
-                    <label><input type="radio" name="mode" value="shortest" x-model="$store.app.mode"></input>
+                    <label><input type="radio" name="mode" value="shortest" x-model="app.mode"></input>
                         only the shortest possible path
                     </label>
                 </div>
             </div>
         </form>
-        <div id="input_area"></div>
+        <div id="input_area">
+            <fieldset x-show="app.problem.input_vars" x-transition>
+                <legend>Input variables</legend>
+                <template x-for="(value, key) in app.problem.input_vars || []">
+                    <div class="input-container">
+                        <label x-text="key"></label>
+                        <template x-if="typeof value === 'number'">
+                            <div class="num">
+                                <button type="button" @click="app.problem.input_vars[key]--">-</button>
+                                <input type="number" x-model="value">
+                                <button type="button" @click="app.problem.input_vars[key]++">+</button>
+                            </div>
+                        </template>
+                        <template x-if="typeof value === 'string'">
+                            <textarea rows="3" x-model="app.problem.input_vars[key]" spellcheck="false" autocapitalize="off"></textarea>
+                        </template>
+                    </div>
+                </template>
+            </fieldset>
+        </div>
         <div style="grid-column: span 2;">
-            <button type="button" id="generate_btn" @click="generate" x-text="$store.app.button_text" :disabled="$store.app.button_text !== 'Generate'"></button>
-            <span id="generate_info" x-text="$store.app.log"></span>
+            <button type="button" id="generate_btn" @click="generate" x-text="app.button_text" :disabled="app.button_text !== 'Generate'"></button>
+            <span id="generate_info" x-text="app.log"></span>
             <span class="copyright">&copy; 2023 S.B.</span>
         </div>
     </fieldset>
 
-    <canvas id="canvas_output" x-show="$store.app.output == 'png'"></canvas>
-    <div id="svg_output" x-show="$store.app.output == 'svg'" x-html="$store.app.svg_output"></div>
+    <canvas id="canvas_output" x-show="app.result_output == 'png'"></canvas>
+    <div id="svg_output" x-show="app.result_output == 'svg'" x-html="app.svg_output"></div>
 
     <script src="js/lib/graphre.js"></script>
     <script src="js/lib/nomnoml.js"></script>
+    <script src="js/helpers.js"></script>
     <script src="app.bundle.js"></script>
 </body>
 </html>
