@@ -69,7 +69,7 @@ export let problems = [
         input_types: {
             cannibals: 'number',
             priests: 'number',
-            priests: 'number',
+            ship_capacity: 'number',
         },
         get start() {
             return {
