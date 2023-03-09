@@ -304,8 +304,8 @@ export let problems = [
                     (item, x) => {
                         if (compare({x, y}, state.data)) return '🐶';
                         if (compare({x, y}, this.vars.finish_position)) return '🦴';
-                        if (item === 'X') return '🧱';
-                        return '⠀';
+                        if (item === 'X') return '🔥';
+                        return 'ㅤ';
                     }
                 ).join('|')
             ).join('||') + ']' + append;
