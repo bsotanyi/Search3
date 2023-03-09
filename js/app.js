@@ -88,14 +88,10 @@ document.addEventListener('alpine:init', () => {
                     custom_problem.custom = true;
                     let index = app.problems.map(p => p.custom).indexOf(true);
                     problems[index] = custom_problem;
-                    setTimeout(() => {
-                        generateGraph();
-                    }, 20);
+                    generateGraph();
                 }
             } else {
-                setTimeout(() => {
-                    generateGraph();
-                }, 20);
+                generateGraph();
             }
         }
     }));
@@ -106,6 +102,7 @@ let source_base = `
 #spacing: 25
 #arrowSize: 0.7
 #gutter: 1
+#font: 'Fira Sans'
 
 #background #eee
 #.good: fill=#9f9 bold
@@ -253,58 +250,60 @@ function generateGraph() {
     app.button_text = 'Solving...';
     app.log = '';
     app.start_time = new Date();
-    app.tree = {
-        id: 0,
-        data: app.problem.start,
-        valid: app.problem.check(app.problem.start),
-        steps: 0,
-    }
-    try {
-        expandTree(app.tree);
-
-        if (app.mode === 'shortest') {
-            let best_child = getBestChild(app.tree);
-            if (!best_child) {
-                alert('Could not find any solve paths.');
-            } else {
-                cleanUpTree(best_child);
-            }
-        }
-        app.log = 'Data tree expanded in ' + ((new Date() - app.start_time)/1000).toFixed(3) + ' seconds.';
-    } catch (err) {
-        alert(err.toString());
-        app.log += 'An error occured while expanding data tree.';
-    }
-
-    app.button_text = 'Rendering...';
-    
     setTimeout(() => {
-        app.start_time = new Date();
-        try {
-            let graph = printTree(app.tree);
-    
-            // let source = source_base + `[<container>${app.problem.title}|\n${graph}\n]`;
-            
-            let extra_options = `
-#direction: ${app.direction}
-            `;
-            let source = extra_options + source_base + graph;
-
-            // console.log(source);
-            
-            if (app.output === 'png') {
-                nomnoml.draw(qs('#canvas_output'), source);
-            } else {;
-                app.svg_output = nomnoml.renderSvg(source);
-            }
-
-            app.log += ' Rendered in ' + ((new Date() - app.start_time)/1000).toFixed(3) + ' seconds.';
-            app.result_output = app.output;
-        } catch (err) {
-            alert('An error occured:\n' + err.toString());
-            app.log += ' Rendering was unsuccessful.';
+        app.tree = {
+            id: 0,
+            data: app.problem.start,
+            valid: app.problem.check(app.problem.start),
+            steps: 0,
         }
-        app.button_text = 'Generate';
+        try {
+            expandTree(app.tree);
+    
+            if (app.mode === 'shortest') {
+                let best_child = getBestChild(app.tree);
+                if (!best_child) {
+                    alert('Could not find any solve paths.');
+                } else {
+                    cleanUpTree(best_child);
+                }
+            }
+            app.log = 'Data tree expanded in ' + ((new Date() - app.start_time)/1000).toFixed(3) + ' seconds.';
+        } catch (err) {
+            alert(err.toString());
+            app.log += 'An error occured while expanding data tree.';
+        }
+    
+        app.button_text = 'Rendering...';
+        
+        setTimeout(() => {
+            app.start_time = new Date();
+            try {
+                let graph = printTree(app.tree);
+        
+                // let source = source_base + `[<container>${app.problem.title}|\n${graph}\n]`;
+                
+                let extra_options = `
+    #direction: ${app.direction}
+                `;
+                let source = extra_options + source_base + graph;
+    
+                // console.log(source);
+                
+                if (app.output === 'png') {
+                    nomnoml.draw(qs('#canvas_output'), source);
+                } else {;
+                    app.svg_output = nomnoml.renderSvg(source);
+                }
+    
+                app.log += ' Rendered in ' + ((new Date() - app.start_time)/1000).toFixed(3) + ' seconds.';
+                app.result_output = app.output;
+            } catch (err) {
+                alert('An error occured:\n' + err.toString());
+                app.log += ' Rendering was unsuccessful.';
+            }
+            app.button_text = 'Generate';
+        }, 20);
     }, 20);
 }
 

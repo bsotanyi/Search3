@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search3</title>
-    <link rel="stylesheet" href="css/main.min.css">
+    <link rel="stylesheet" href="css/main.min.css?v=4g89e4g8r94h96">
 </head>
 <body x-data="application">
     <h1>Search<mark>3</mark></h1>
@@ -79,14 +79,14 @@
                     <template x-for="(value, key) in app.problem.input_vars || []">
                         <div class="input-container">
                             <label x-text="key"></label>
-                            <template x-if="typeof value === 'number'">
+                            <template x-if="app.problem.input_types[key] === 'number'">
                                 <div class="num">
                                     <button type="button" @click="app.problem.input_vars[key]--">-</button>
-                                    <input type="number" x-model="value">
+                                    <input type="number" x-model.number="app.problem.input_vars[key]">
                                     <button type="button" @click="app.problem.input_vars[key]++">+</button>
                                 </div>
                             </template>
-                            <template x-if="typeof value === 'string'">
+                            <template x-if="app.problem.input_types[key] === 'textarea'">
                                 <textarea rows="3" x-text="value" @input="$nextTick(() => app.problem.input_vars[key] = $el.value)" spellcheck="false" autocapitalize="off"></textarea>
                             </template>
                         </div>
@@ -107,6 +107,6 @@
     <script src="js/lib/graphre.js"></script>
     <script src="js/lib/nomnoml.js"></script>
     <script src="js/helpers.js"></script>
-    <script src="app.bundle.js"></script>
+    <script src="app.bundle.js?v=4dw8a4dwa6d48w6a"></script>
 </body>
 </html>

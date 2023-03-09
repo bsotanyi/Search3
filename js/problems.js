@@ -66,6 +66,11 @@ export let problems = [
             priests: 3,
             ship_capacity: 2,
         },
+        input_types: {
+            cannibals: 'number',
+            priests: 'number',
+            priests: 'number',
+        },
         get start() {
             return {
                 cannibals_left: this.input_vars.cannibals,
@@ -152,6 +157,12 @@ export let problems = [
             max_jump_length: 2,
             empty_spaces: 1
         },
+        input_types: {
+            left_frogs: 'number',
+            right_frogs: 'number',
+            max_jump_length: 'number',
+            empty_spaces: 'number'
+        },
         get start() {
             return [
                 ...Array(this.input_vars.left_frogs).fill(1),
@@ -214,6 +225,9 @@ export let problems = [
             map: `D--
 -XB
 ---`
+        },
+        input_types: {
+            map: 'textarea'
         },
         vars: {},
         init() {
